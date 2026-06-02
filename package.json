@@ -1,0 +1,37 @@
+{
+  "name": "nobelium",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@tiptap/extension-image": "^3.24.0",
+    "@tiptap/extension-link": "^3.24.0",
+    "@tiptap/extension-text-align": "^3.24.0",
+    "@tiptap/extension-underline": "^3.24.0",
+    "@tiptap/pm": "^3.24.0",
+    "@tiptap/react": "^3.24.0",
+    "@tiptap/starter-kit": "^3.24.0",
+    "adm-zip": "^0.5.17",
+    "firebase": "^12.14.0",
+    "firebase-admin": "^13.10.0",
+    "framer-motion": "^12.40.0",
+    "jsdom": "^29.1.1",
+    "lucide-react": "^1.17.0",
+    "mongodb": "^7.2.0",
+    "mongoose": "^9.6.3",
+    "next": "16.2.7",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "slugify": "^1.6.9",
+    "tiptap-extension-resize-image": "^1.4.0"
+  },
+  "devDependencies": {
+    "eslint": "^9",
+    "eslint-config-next": "16.2.7"
+  }
+}

@@ -1,0 +1,37 @@
+import { NextResponse } from "next/server";
+import connectMongo from "@/lib/mongodb";
+import Edition from "@/models/Edition";
+import slugify from "slugify";
+
+export async function GET(request) {
+  try {
+    await connectMongo();
+    const editions = await Edition.find({}).sort({ createdAt: -1 });
+    return NextResponse.json({ editions });
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function POST(request) {
+  try {
+    // Note: Auth check can be added here
+    await connectMongo();
+    const body = await request.json();
+    const { name, releaseDate } = body;
+    
+    if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
+
+    const slug = slugify(name, { lower: true, strict: true }) + '-' + Date.now();
+
+    const edition = await Edition.create({
+      name,
+      slug,
+      releaseDate: releaseDate ? new Date(releaseDate) : new Date(),
+    });
+
+    return NextResponse.json({ success: true, edition });
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
