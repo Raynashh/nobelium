@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast, ToastContainer } from "@/components/useToast";
 
 const SUBJECTS = [
   "Biology",
@@ -32,6 +33,7 @@ export default function AdminDashboard() {
   const [isCreatingDraft, setIsCreatingDraft] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
+  const { toasts, toast } = useToast();
 
   useEffect(() => {
     fetch("/api/editions")
@@ -84,13 +86,16 @@ export default function AdminDashboard() {
       setSelectedEdition(data.edition._id);
       setNewEditionName("");
     } else {
-      alert("Error: " + data.error);
+      toast.error("Error: " + data.error);
     }
   };
 
   const handleCreateManualDraft = async (e) => {
     e.preventDefault();
-    if (!selectedEdition) return alert("Select an edition first.");
+    if (!selectedEdition) {
+      toast.error("Select an edition first.");
+      return;
+    }
 
     setIsCreatingDraft(true);
     try {
@@ -107,10 +112,10 @@ export default function AdminDashboard() {
       if (data.success) {
         router.push(`/admin/edit/${data.articleSlug}`);
       } else {
-        alert("Error: " + data.error);
+        toast.error("Error: " + data.error);
       }
     } catch {
-      alert("Draft creation failed.");
+      toast.error("Draft creation failed.");
     } finally {
       setIsCreatingDraft(false);
     }
@@ -118,13 +123,20 @@ export default function AdminDashboard() {
 
   const handleHtmlZipUpload = async (e) => {
     e.preventDefault();
-    if (!htmlZipFile || !selectedEdition) return alert("Select a ZIP file and an edition first.");
+    if (!htmlZipFile || !selectedEdition) {
+      toast.error("Select a ZIP file and an edition first.");
+      return;
+    }
+    if (!importTitle.trim()) {
+      toast.error("Please enter a title for the imported article.");
+      return;
+    }
 
     setIsUploading(true);
     const formData = new FormData();
     formData.append("file", htmlZipFile);
     formData.append("editionId", selectedEdition);
-    formData.append("title", importTitle || "Imported HTML Article");
+    formData.append("title", importTitle.trim());
     formData.append("subject", importSubject);
 
     try {
@@ -136,17 +148,19 @@ export default function AdminDashboard() {
       if (data.success) {
         router.push(`/admin/edit/${data.articleSlug}`);
       } else {
-        alert("Error: " + data.error);
+        toast.error("Error: " + data.error);
       }
     } catch {
-      alert("Upload failed.");
+      toast.error("Upload failed.");
     } finally {
       setIsUploading(false);
     }
   };
 
   return (
-    <div className="admin-container" style={{ maxWidth: "1100px" }}>
+    <>
+      <ToastContainer toasts={toasts} />
+      <div className="admin-container" style={{ maxWidth: "1100px" }}>
       <h1 style={{ marginBottom: "1.5rem" }}>Admin Dashboard</h1>
 
       <section style={{ border: "1px solid var(--border)", padding: "1.5rem", marginBottom: "2rem" }}>
@@ -237,7 +251,7 @@ export default function AdminDashboard() {
         <form onSubmit={handleHtmlZipUpload} className="admin-import-grid">
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label>Imported Title</label>
-            <input value={importTitle} onChange={e => setImportTitle(e.target.value)} placeholder="Imported HTML Article" />
+            <input value={importTitle} onChange={e => setImportTitle(e.target.value)} placeholder="e.g. Why does slang change so fast" required />
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label>Category</label>
@@ -255,5 +269,6 @@ export default function AdminDashboard() {
         </form>
       </section>
     </div>
+    </>
   );
 }

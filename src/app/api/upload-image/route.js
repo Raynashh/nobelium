@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
 import { adminAuth } from "@/lib/firebaseAdmin";
 import connectMongo from "@/lib/mongodb";
+import { s3Client, R2_BUCKET_NAME, R2_PUBLIC_URL } from "@/lib/s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 export async function POST(request) {
   try {
@@ -19,8 +19,6 @@ export async function POST(request) {
       return NextResponse.json({ error: "Forbidden: Admins or Editors only" }, { status: 403 });
     }
 
-
-
     const formData = await request.formData();
     const file = formData.get("file");
 
@@ -30,14 +28,19 @@ export async function POST(request) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "editor");
+    const s3Key = `uploads/editor/${fileName}`;
+
+    const command = new PutObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: s3Key,
+      Body: buffer,
+      ContentType: file.type || "application/octet-stream",
+    });
+
+    await s3Client.send(command);
     
-    await fs.mkdir(uploadDir, { recursive: true });
-    
-    const diskPath = path.join(uploadDir, fileName);
-    await fs.writeFile(diskPath, buffer);
-    
-    const publicUrl = `/api/uploads/editor/${fileName}`;
+    // Serve directly via the public URL (e.g. nobelium.cdn.ddbrother.me/uploads/editor/...)
+    const publicUrl = `${R2_PUBLIC_URL}/${s3Key}`;
 
     return NextResponse.json({ success: true, url: publicUrl });
   } catch (error) {

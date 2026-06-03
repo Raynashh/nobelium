@@ -9,6 +9,8 @@ import Edition from "@/models/Edition";
 import User from "@/models/User";
 import slugify from "slugify";
 import { adminAuth } from "@/lib/firebaseAdmin";
+import { s3Client, R2_BUCKET_NAME, R2_PUBLIC_URL } from "@/lib/s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 export async function POST(request) {
   try {
@@ -37,12 +39,21 @@ export async function POST(request) {
     const edition = await Edition.findById(editionId);
     if (!edition) return NextResponse.json({ error: "Edition not found" }, { status: 404 });
 
-    const articleSlug = slugify(title, { lower: true, strict: true }) + '-' + Date.now();
+    let baseSlug = slugify(title, { lower: true, strict: true });
+    if (!baseSlug) baseSlug = "imported-article";
+
+    let articleSlug = baseSlug;
+    let counter = 1;
+    while (await Article.findOne({ slug: articleSlug })) {
+      articleSlug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
     const editionSlug = edition.slug;
 
-    // Create physical directories
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "editions", editionSlug, articleSlug);
-    await fs.mkdir(uploadDir, { recursive: true });
+    // Cloudflare R2 handles directories implicitly
+    // const uploadDir = path.join(process.cwd(), "public", "uploads", "editions", editionSlug, articleSlug);
+    // await fs.mkdir(uploadDir, { recursive: true });
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const zip = new AdmZip(buffer);
@@ -75,11 +86,31 @@ export async function POST(request) {
 
         const cleanBaseName = baseName.replace(/[^a-zA-Z0-9.\-_]/g, "_");
         const fileContent = entry.getData();
-        const diskPath = path.join(uploadDir, cleanBaseName);
-        await fs.writeFile(diskPath, fileContent);
+        const s3Key = `uploads/editions/${editionSlug}/${articleSlug}/${cleanBaseName}`;
         
-        const publicUrl = `/api/uploads/editions/${editionSlug}/${articleSlug}/${cleanBaseName}`;
-        imageMap[baseName] = publicUrl;
+        let contentType = "application/octet-stream";
+        if (ext === ".png") contentType = "image/png";
+        else if (ext === ".jpg" || ext === ".jpeg") contentType = "image/jpeg";
+        else if (ext === ".gif") contentType = "image/gif";
+        else if (ext === ".svg") contentType = "image/svg+xml";
+        else if (ext === ".webp") contentType = "image/webp";
+
+        const command = new PutObjectCommand({
+          Bucket: R2_BUCKET_NAME,
+          Key: s3Key,
+          Body: fileContent,
+          ContentType: contentType,
+        });
+
+        try {
+          await s3Client.send(command);
+          const publicUrl = `${R2_PUBLIC_URL}/${s3Key}`;
+          imageMap[baseName] = publicUrl;
+        } catch (s3Error) {
+          console.error(`Failed to upload ${cleanBaseName} to S3:`, s3Error);
+          // If a single image fails, we might still want to proceed, or fail the whole import.
+          // For now, we will log it and skip assigning it to the image map.
+        }
       } else if ([".html", ".xhtml"].includes(ext)) {
         if (baseName.toLowerCase() === "index.html" || baseName.toLowerCase() === "toc.html") continue;
         const content = entry.getData().toString('utf-8');

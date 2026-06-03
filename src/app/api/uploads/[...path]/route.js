@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
 
 export async function GET(request, { params }) {
   const resolvedParams = await params;
@@ -11,27 +9,11 @@ export async function GET(request, { params }) {
 
   // Prevent directory traversal
   const safePathArray = filePathArray.filter(segment => !segment.includes('..') && segment !== '');
-  const filePath = path.join(process.cwd(), 'public', 'uploads', ...safePathArray);
   
-  try {
+  // Construct the new public R2 URL
+  const r2PublicUrl = process.env.R2_PUBLIC_URL || "https://nobelium.cdn.ddbrother.me";
+  const redirectUrl = `${r2PublicUrl}/uploads/${safePathArray.join('/')}`;
 
-    const file = await fs.readFile(filePath);
-    const ext = path.extname(filePath).toLowerCase();
-    
-    let contentType = 'application/octet-stream';
-    if (ext === '.png') contentType = 'image/png';
-    else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
-    else if (ext === '.gif') contentType = 'image/gif';
-    else if (ext === '.svg') contentType = 'image/svg+xml';
-    else if (ext === '.webp') contentType = 'image/webp';
-    
-    return new NextResponse(file, {
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
-    });
-  } catch (error) {
-    return new NextResponse('Not Found', { status: 404 });
-  }
+  // Issue a 301 Permanent Redirect to offload traffic directly to the CDN
+  return NextResponse.redirect(redirectUrl, 301);
 }

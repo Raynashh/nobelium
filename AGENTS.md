@@ -45,3 +45,7 @@ When creating or modifying components for the **Nobelium** web app, you must str
 4. **Production Deployment**:
    - The application runs on a local VM and is managed by PM2 (`pm2 status`).
    - If you make backend or structural changes, always run `npm run build && npx pm2 restart nobelium` to apply them to the live production server.
+
+5. **Toast Notifications instead of Alerts**:
+   - NEVER use the native browser `alert()` or `window.alert()` functions for user feedback.
+   - Always use the custom toast implementation: import `useToast` and `ToastContainer` from `@/components/useToast`, render `<ToastContainer toasts={toasts} />` within your component, and call `toast.success()`, `toast.error()`, or `toast.info()`.
