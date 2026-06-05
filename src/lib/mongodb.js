@@ -7,10 +7,10 @@ if (!cached) {
 }
 
 async function dbConnect() {
-  const MONGODB_URI = process.env.MONGODB_URI;
+  const MONGODB_URI = process.env.MONGODB_URI || process.env.DEV_MONGODB_URI;
 
   if (!MONGODB_URI) {
-    throw new Error("Please define the MONGODB_URI environment variable inside .env.dev");
+    throw new Error("Please define the MONGODB_URI or DEV_MONGODB_URI environment variable inside .env.dev");
   }
 
   if (cached.conn) {

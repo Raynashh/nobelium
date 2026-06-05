@@ -9,5 +9,5 @@ export const s3Client = new S3Client({
   },
 });
 
-export const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || "nobelium";
-export const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || "https://nobelium.cdn.ddbrother.me";
+export const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || process.env.DEV_R2_BUCKET_NAME || "nobelium";
+export const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || process.env.DEV_R2_PUBLIC_URL || "https://nobelium.cdn.ddbrother.me";

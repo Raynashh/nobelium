@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const DEV_MONGODB_URI = process.env.DEV_MONGODB_URI;
 const ADMIN_EMAILS = process.env.ADMIN_EMAILS;
 
-if (!MONGODB_URI) {
-  console.error("Please define the MONGODB_URI environment variable in .env.dev");
+if (!DEV_MONGODB_URI) {
+  console.error("Please define the DEV_MONGODB_URI environment variable in .env.dev");
   process.exit(1);
 }
 
@@ -30,7 +30,7 @@ const User = mongoose.models.User || mongoose.model("User", UserSchema);
 
 async function bootstrap() {
   try {
-    await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(DEV_MONGODB_URI);
     console.log("Connected to MongoDB.");
 
     const emails = ADMIN_EMAILS.split(",").map((e) => e.trim());
