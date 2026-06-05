@@ -200,39 +200,55 @@ const MenuBar = ({ editor, onSetHeaderImage, toast, articleSlug, editionSlug }) 
   if (!editor) return null;
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
     setIsUploading(true);
-    try {
-      const presignRes = await fetch('/api/upload-image', {
-        method: 'POST',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          fileName: file.name, 
-          fileType: file.type || "application/octet-stream",
-          articleSlug,
-          editionSlug
-        })
-      });
-      const presignData = await presignRes.json();
-      if (presignData.success) {
-        const uploadRes = await fetch(presignData.presignedUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type || "application/octet-stream" },
-          body: file
+    
+    const uploadPromises = files.map(async (file) => {
+      try {
+        const presignRes = await fetch('/api/upload-image', {
+          method: 'POST',
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            fileName: file.name, 
+            fileType: file.type || "application/octet-stream",
+            articleSlug,
+            editionSlug
+          })
         });
-        if (uploadRes.ok) {
-          editor.chain().focus().setImage({ src: presignData.url, width: '40%' }).run();
-          toast.success('Image inserted.');
+        const presignData = await presignRes.json();
+        if (presignData.success) {
+          const uploadRes = await fetch(presignData.presignedUrl, {
+            method: "PUT",
+            headers: { "Content-Type": file.type || "application/octet-stream" },
+            body: file
+          });
+          if (uploadRes.ok) {
+            return presignData.url;
+          } else {
+            toast.error('Upload to storage failed for ' + file.name);
+            return null;
+          }
         } else {
-          toast.error('Upload to storage failed.');
+          toast.error('Upload failed for ' + file.name + ': ' + presignData.error);
+          return null;
         }
-      } else {
-        toast.error('Upload failed: ' + presignData.error);
+      } catch {
+        toast.error('Upload error for ' + file.name + ' — please try again.');
+        return null;
       }
-    } catch {
-      toast.error('Upload error — please try again.');
+    });
+
+    const results = await Promise.all(uploadPromises);
+    const successfulUrls = results.filter(url => url !== null);
+    
+    if (successfulUrls.length > 0) {
+      successfulUrls.forEach(url => {
+        editor.chain().focus().setImage({ src: url, width: '40%' }).run();
+      });
+      toast.success(`${successfulUrls.length} image(s) inserted.`);
     }
+    
     setIsUploading(false);
     e.target.value = '';
   };
@@ -296,7 +312,7 @@ const MenuBar = ({ editor, onSetHeaderImage, toast, articleSlug, editionSlug }) 
       {btn(handleAddLink, editor.isActive('link'), 'Add / Edit Link', <LinkIcon size={15} />)}
       {btn(() => editor.chain().focus().unsetLink().run(), false, 'Remove Link', <Unlink size={15} />, !editor.isActive('link'))}
       <span className="menu-divider" />
-      <input id="body-image-upload" type="file" accept="image/*" onChange={handleImageUpload} disabled={isUploading} style={{ display: 'none' }} />
+      <input id="body-image-upload" type="file" accept="image/*" multiple onChange={handleImageUpload} disabled={isUploading} style={{ display: 'none' }} />
       <label
         htmlFor="body-image-upload"
         className="menu-btn"
@@ -337,8 +353,15 @@ export default function RichTextEditor({ content, onChange, onSetHeaderImage, im
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
     editorProps: {
       handleDrop: (view, event) => {
-        const url = event.dataTransfer?.getData('text/plain');
-        if (!url || !url.startsWith('/api/uploads')) return false;
+        const bankUrl = event.dataTransfer?.getData('application/vnd.nobelium.image');
+        let url = bankUrl;
+        if (!url) {
+          const plainText = event.dataTransfer?.getData('text/plain');
+          if (plainText && plainText.startsWith('/api/uploads')) {
+            url = plainText;
+          }
+        }
+        if (!url) return false;
         event.preventDefault();
         const coords = { left: event.clientX, top: event.clientY };
         const pos = view.posAtCoords(coords);
@@ -353,38 +376,51 @@ export default function RichTextEditor({ content, onChange, onSetHeaderImage, im
   });
 
   const handleBankUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
     setBankUploading(true);
-    try {
-      const presignRes = await fetch('/api/upload-image', {
-        method: 'POST',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          fileName: file.name, 
-          fileType: file.type || "application/octet-stream",
-          articleSlug,
-          editionSlug
-        })
-      });
-      const presignData = await presignRes.json();
-      if (presignData.success) {
-        const uploadRes = await fetch(presignData.presignedUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type || "application/octet-stream" },
-          body: file
+    
+    const uploadPromises = files.map(async (file) => {
+      try {
+        const presignRes = await fetch('/api/upload-image', {
+          method: 'POST',
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            fileName: file.name, 
+            fileType: file.type || "application/octet-stream",
+            articleSlug,
+            editionSlug
+          })
         });
-        if (uploadRes.ok) {
-          setImageBank(prev => [...prev, presignData.url]);
-          toast.success('Image added to bank.');
+        const presignData = await presignRes.json();
+        if (presignData.success) {
+          const uploadRes = await fetch(presignData.presignedUrl, {
+            method: "PUT",
+            headers: { "Content-Type": file.type || "application/octet-stream" },
+            body: file
+          });
+          if (uploadRes.ok) {
+            return presignData.url;
+          } else {
+            toast.error('Upload to storage failed for ' + file.name);
+            return null;
+          }
         } else {
-          toast.error('Upload to storage failed.');
+          toast.error('Upload failed for ' + file.name + ': ' + presignData.error);
+          return null;
         }
-      } else {
-        toast.error('Upload failed: ' + presignData.error);
+      } catch {
+        toast.error('Upload error for ' + file.name + ' — please try again.');
+        return null;
       }
-    } catch {
-      toast.error('Upload error — please try again.');
+    });
+
+    const results = await Promise.all(uploadPromises);
+    const successfulUrls = results.filter(url => url !== null);
+    
+    if (successfulUrls.length > 0) {
+      setImageBank(prev => [...prev, ...successfulUrls]);
+      toast.success(`${successfulUrls.length} image(s) added to bank.`);
     }
     setBankUploading(false);
     e.target.value = '';
@@ -503,7 +539,7 @@ export default function RichTextEditor({ content, onChange, onSetHeaderImage, im
             <div className="image-bank-sidebar">
               <div className="image-bank-header">
                 <h3>Image Bank</h3>
-                <input type="file" accept="image/*" ref={bankUploadRef} onChange={handleBankUpload} style={{ display: 'none' }} />
+                <input type="file" accept="image/*" multiple ref={bankUploadRef} onChange={handleBankUpload} style={{ display: 'none' }} />
                 <button type="button" className="bank-upload-btn" onClick={openBankUpload} disabled={bankUploading}>
                   {bankUploading ? <Loader2 size={12} className="spin" /> : <Upload size={12} />}
                   {bankUploading ? 'Uploading…' : 'Upload'}
@@ -521,6 +557,7 @@ export default function RichTextEditor({ content, onChange, onSetHeaderImage, im
                       draggable
                       onDragStart={e => {
                         e.dataTransfer.effectAllowed = 'copy';
+                        e.dataTransfer.setData('application/vnd.nobelium.image', url);
                         e.dataTransfer.setData('text/plain', url);
                         e.dataTransfer.setData('text/uri-list', url);
                       }}
