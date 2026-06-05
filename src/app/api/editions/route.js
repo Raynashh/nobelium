@@ -15,7 +15,6 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    // Note: Auth check can be added here
     await connectMongo();
     const body = await request.json();
     const { name, releaseDate } = body;

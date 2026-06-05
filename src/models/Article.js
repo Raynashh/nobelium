@@ -17,7 +17,7 @@ const ArticleSchema = new mongoose.Schema(
       unique: true,
     },
     content: {
-      type: String, // HTML or JSON from Rich Text Editor
+      type: String,
       required: true,
     },
     subject: {
@@ -44,7 +44,7 @@ const ArticleSchema = new mongoose.Schema(
     editionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Edition",
-      required: false, // Optional for now so older articles don't break, or drafts before assignment
+      required: false,
     },
     headerImageUrl: {
       type: String,

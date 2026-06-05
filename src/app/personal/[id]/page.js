@@ -2,7 +2,6 @@ import ArticleCard from "@/components/ArticleCard";
 import { User } from "lucide-react";
 
 export default function AuthorProfile({ params }) {
-  // Mock data
   const author = {
     name: "Dr. Jane Smith",
     bio: "Senior Biology Editor with a passion for genetics and molecular biology. Jane has been contributing to The Nobleman for 3 years.",

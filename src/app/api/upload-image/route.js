@@ -39,7 +39,6 @@ export async function POST(request) {
 
     await s3Client.send(command);
     
-    // Serve directly via the public URL (e.g. nobelium.cdn.ddbrother.me/uploads/editor/...)
     const publicUrl = `${R2_PUBLIC_URL}/${s3Key}`;
 
     return NextResponse.json({ success: true, url: publicUrl });

@@ -18,7 +18,6 @@ export default async function EditArticlePage({ params }) {
   const users = await User.find({}).sort({ name: 1 }).lean();
   const editions = await Edition.find({}).sort({ createdAt: -1 }).lean();
 
-  // Convert ObjectIds to strings to pass to client component securely
   const serializedArticle = {
     ...article,
     _id: article._id.toString(),

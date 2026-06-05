@@ -35,7 +35,7 @@ export default function ClientArticleEditor({ initialArticle, users, editions })
       const data = await res.json();
       if (data.success) {
         toast.success("Article saved successfully!");
-        router.refresh(); // bust Next.js router cache so public page reflects edits immediately
+        router.refresh();
         if (slug !== initialArticle.slug) {
           window.location.href = `/admin/edit/${slug}`;
         } else if (status === "Published") {

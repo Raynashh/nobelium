@@ -8,7 +8,6 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   await connectMongo();
   
-  // Fetch latest 4 articles
   const articles = await Article.find({ isDeleted: { $ne: true } })
     .sort({ createdAt: -1 })
     .limit(4)
@@ -54,7 +53,6 @@ export default async function Home() {
         ) : (
           <div className="featured-story" style={{ padding: "2rem", textAlign: "center", background: "#f8f9fa", border: "1px dashed var(--border)" }}>
             <h2 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>No Articles Yet</h2>
-            <p style={{ color: "var(--primary)" }}>Head to the Admin Dashboard and upload your first EPUB!</p>
           </div>
         )}
       </div>

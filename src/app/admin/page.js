@@ -161,7 +161,7 @@ export default function AdminDashboard() {
     <>
       <ToastContainer toasts={toasts} />
       <div className="admin-container" style={{ maxWidth: "1100px" }}>
-      <h1 style={{ marginBottom: "1.5rem" }}>Admin Dashboard</h1>
+      <h1 style={{ marginBottom: "1.5rem" }}>Staff</h1>
 
       <section style={{ border: "1px solid var(--border)", padding: "1.5rem", marginBottom: "2rem" }}>
         <div className="admin-top-grid">

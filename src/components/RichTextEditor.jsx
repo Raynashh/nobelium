@@ -18,7 +18,6 @@ import {
 import { useRef, useState, useEffect } from 'react';
 import { useToast, ToastContainer } from '@/components/useToast';
 
-// ─── Link Popover (custom, no BubbleMenu dep) ─────────────────────────────────
 function LinkPopover({ editor, toast, wrapperRef }) {
   const [show, setShow] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
@@ -40,12 +39,10 @@ function LinkPopover({ editor, toast, wrapperRef }) {
       setHref(currentHref);
       setDraft(currentHref);
 
-      // Find the DOM node of the selected link mark
       const { from } = editor.state.selection;
       const domNode = editor.view.domAtPos(from)?.node;
       if (!domNode) { setShow(false); return; }
 
-      // Walk up to find the <a> element
       let el = domNode.nodeType === 3 ? domNode.parentElement : domNode;
       while (el && el.tagName !== 'A') el = el.parentElement;
 
@@ -108,7 +105,6 @@ function LinkPopover({ editor, toast, wrapperRef }) {
     }
   };
 
-  // Close popover on outside click
   useEffect(() => {
     const handler = (e) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target)) {
@@ -156,7 +152,6 @@ function LinkPopover({ editor, toast, wrapperRef }) {
       ref={popoverRef}
       className="link-popover"
       style={{ top: pos.top, left: Math.max(0, pos.left) }}
-      // Prevent editor from losing focus when clicking popover, but allow inputs to be focused
       onMouseDown={e => {
         if (e.target.tagName !== 'INPUT') {
           e.preventDefault();
@@ -199,7 +194,6 @@ function LinkPopover({ editor, toast, wrapperRef }) {
   );
 }
 
-// ─── Menu Bar ─────────────────────────────────────────────────────────────────
 const MenuBar = ({ editor, onSetHeaderImage, toast }) => {
   const [isUploading, setIsUploading] = useState(false);
 
@@ -305,7 +299,6 @@ const MenuBar = ({ editor, onSetHeaderImage, toast }) => {
   );
 };
 
-// ─── Main component ───────────────────────────────────────────────────────────
 export default function RichTextEditor({ content, onChange, onSetHeaderImage, imageBank, setImageBank, toast: externalToast }) {
   const { toasts, toast: internalToast } = useToast();
   const toast = externalToast || internalToast;
@@ -329,18 +322,16 @@ export default function RichTextEditor({ content, onChange, onSetHeaderImage, im
     editorProps: {
       handleDrop: (view, event) => {
         const url = event.dataTransfer?.getData('text/plain');
-        // Only intercept if this looks like one of our uploaded image URLs
         if (!url || !url.startsWith('/api/uploads')) return false;
         event.preventDefault();
         const coords = { left: event.clientX, top: event.clientY };
         const pos = view.posAtCoords(coords);
         const insertAt = pos?.pos ?? view.state.selection.anchor;
-        // Build imageResize node directly via PM schema
         const schema = view.state.schema;
         const imgNode = (schema.nodes.imageResize ?? schema.nodes.image)?.create({ src: url, width: '40%' });
         if (!imgNode) return false;
         view.dispatch(view.state.tr.insert(insertAt, imgNode));
-        return true; // suppresses ProseMirror's default (URL-as-text) insertion
+        return true;
       },
     },
   });

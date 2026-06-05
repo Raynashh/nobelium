@@ -35,7 +35,7 @@ When creating or modifying components for the **Nobelium** web app, you must str
 
 2. **Database & Article Deletion**:
    - Articles are **soft-deleted** rather than permanently removed. The `Article` Mongoose schema includes an `isDeleted: { type: Boolean, default: false }` flag.
-   - All Mongoose queries fetching articles for public viewing (Homepage, Archive) or the Admin Dashboard MUST exclude deleted articles by using `{ isDeleted: { $ne: true } }`.
+   - All Mongoose queries fetching articles for public viewing (Homepage, Archive) or the Staff MUST exclude deleted articles by using `{ isDeleted: { $ne: true } }`.
 
 3. **Automated EPUB Importer**:
    - We support automated article drafting via InDesign EPUB imports (`/api/articles/import-epub/route.js`).
@@ -49,3 +49,6 @@ When creating or modifying components for the **Nobelium** web app, you must str
 5. **Toast Notifications instead of Alerts**:
    - NEVER use the native browser `alert()` or `window.alert()` functions for user feedback.
    - Always use the custom toast implementation: import `useToast` and `ToastContainer` from `@/components/useToast`, render `<ToastContainer toasts={toasts} />` within your component, and call `toast.success()`, `toast.error()`, or `toast.info()`.
+
+6. **Code Comments**:
+   - Never add extraneous comments. Only when requested should you comment code.

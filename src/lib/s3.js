@@ -1,6 +1,5 @@
 import { S3Client } from "@aws-sdk/client-s3";
 
-// Configure the S3 client to point to Cloudflare R2
 export const s3Client = new S3Client({
   region: "auto",
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,

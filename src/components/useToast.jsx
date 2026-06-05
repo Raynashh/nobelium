@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect } from "react";
 
-// ─── Toast hook ───────────────────────────────────────────────────────────────
 let _id = 0;
 
 export function useToast() {
@@ -25,7 +24,6 @@ export function useToast() {
   return { toasts, toast };
 }
 
-// ─── Toast container ──────────────────────────────────────────────────────────
 export function ToastContainer({ toasts }) {
   if (!toasts.length) return null;
   return (

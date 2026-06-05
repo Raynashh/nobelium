@@ -51,9 +51,6 @@ export async function POST(request) {
 
     const editionSlug = edition.slug;
 
-    // Cloudflare R2 handles directories implicitly
-    // const uploadDir = path.join(process.cwd(), "public", "uploads", "editions", editionSlug, articleSlug);
-    // await fs.mkdir(uploadDir, { recursive: true });
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const zip = new AdmZip(buffer);
@@ -62,13 +59,11 @@ export async function POST(request) {
     let rawHtmlArray = [];
     const imageMap = {}; 
 
-    // Extract files
     for (const entry of zipEntries) {
       if (entry.isDirectory) continue;
       
       const entryName = entry.entryName;
       
-      // Ignore macOS hidden files and directories
       if (entryName.includes("__MACOSX") || path.basename(entryName).startsWith("._")) {
         continue;
       }
@@ -79,7 +74,6 @@ export async function POST(request) {
       const isImage = [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"].includes(ext);
       
       if (isImage) {
-        // Only extract images that are actually in an image folder to avoid extracting random assets
         if (!entryName.toLowerCase().includes("/image/") && !entryName.toLowerCase().includes("/images/")) {
           continue;
         }
@@ -108,8 +102,6 @@ export async function POST(request) {
           imageMap[baseName] = publicUrl;
         } catch (s3Error) {
           console.error(`Failed to upload ${cleanBaseName} to S3:`, s3Error);
-          // If a single image fails, we might still want to proceed, or fail the whole import.
-          // For now, we will log it and skip assigning it to the image map.
         }
       } else if ([".html", ".xhtml"].includes(ext)) {
         if (baseName.toLowerCase() === "index.html" || baseName.toLowerCase() === "toc.html") continue;
@@ -118,37 +110,30 @@ export async function POST(request) {
       }
     }
 
-    // Sort HTML files to ensure they are stitched in correct order
     rawHtmlArray.sort((a, b) => a.name.localeCompare(b.name));
 
     let finalHtml = "";
 
-    // Parse each HTML document with jsdom to clean it and update image src
     for (const htmlFile of rawHtmlArray) {
       const dom = new JSDOM(htmlFile.content);
       const document = dom.window.document;
 
-      // Clean up InDesign specific empty spans that might break links
       const spans = document.querySelectorAll("span");
       spans.forEach(span => {
         if (!span.className && !span.style.length && span.childNodes.length === 1 && span.firstChild.nodeType === 3) {
-          // just unwrap plain spans
           const text = document.createTextNode(span.textContent);
           span.parentNode.replaceChild(text, span);
         }
       });
 
-      // Remove all figure elements which often wrap images
       const figures = document.querySelectorAll("figure");
       figures.forEach(fig => fig.parentNode.removeChild(fig));
 
-      // Remove any remaining img tags, but capture their extracted URLs
       const images = document.querySelectorAll("img");
       images.forEach(img => {
         img.parentNode.removeChild(img);
       });
 
-      // Convert links to proper anchor tags
       const links = document.querySelectorAll("a");
       links.forEach(link => {
         const url = link.getAttribute("href") || "#";
@@ -157,12 +142,9 @@ export async function POST(request) {
         anchor.href = url;
         anchor.textContent = text;
         anchor.style.color = 'var(--primary)';
-        // optional: open links in new tab
-        // anchor.target = "_blank";
         link.parentNode.replaceChild(anchor, link);
       });
 
-      // Extract the body content
       if (document.body) {
         finalHtml += document.body.innerHTML + "\n<hr/>\n";
       } else {
@@ -178,7 +160,7 @@ export async function POST(request) {
       authorId: user._id,
       editionId: edition._id,
       status: "Draft",
-      imageBank: Object.values(imageMap) // Add all extracted images to the bank
+      imageBank: Object.values(imageMap)
     });
 
     return NextResponse.json({ success: true, articleSlug });

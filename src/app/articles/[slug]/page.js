@@ -10,8 +10,6 @@ export const dynamic = "force-dynamic";
 export default async function SingleArticle({ params }) {
   await connectMongo();
   
-  // Note: params in Next.js 15 requires awaiting or destructuring properly in server components,
-  // but standard destructuring works for basic usage. Wait, in Next 15, `params` is a promise.
   const resolvedParams = await params;
   
   const article = await Article.findOne({ slug: resolvedParams.slug, isDeleted: { $ne: true } })

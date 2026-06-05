@@ -15,8 +15,6 @@ export default function LoginPage() {
     setError("");
     const provider = new GoogleAuthProvider();
     
-    // Force Google Sign-In to prompt for account selection if needed, 
-    // or restrict to domain by passing setCustomParameters({ hd: "nobles.edu" })
     try {
       const userCredential = await signInWithPopup(auth, provider);
       const idToken = await userCredential.user.getIdToken();

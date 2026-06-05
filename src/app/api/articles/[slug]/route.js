@@ -15,7 +15,6 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Forbidden: Admins or Editors only" }, { status: 403 });
     }
 
-    // Using await for params is safe for Next.js 15
     const resolvedParams = await params;
     const { slug } = resolvedParams;
 
