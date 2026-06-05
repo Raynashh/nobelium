@@ -4,10 +4,10 @@ import { ArrowRight } from "lucide-react";
 export default function AboutPage() {
   return (
     <div className="container" style={{ padding: "4rem 1.5rem", maxWidth: "800px" }}>
-      <h1 style={{ fontSize: "3rem", marginBottom: "1.5rem", color: "var(--primary)" }}>About The Nobleman</h1>
+      <h1 style={{ fontSize: "3rem", marginBottom: "1.5rem", color: "var(--primary)" }}>About Nobelium</h1>
       
       <div className="article-content">
-        <p>The Nobleman Online (Science Edition) is the premier student-run publication dedicated to STEM research, breakthroughs, and discussions at Noble and Greenough School.</p>
+        <p>Nobelium is the premier student-run publication dedicated to STEM research, breakthroughs, and discussions at Noble and Greenough School.</p>
         
         <h2>Our Mission</h2>
         <p>Our mission is to empower student voices and provide a platform for rigorous scientific inquiry, opinion, and feature writing. We strive to make complex topics accessible and engaging for our entire community.</p>

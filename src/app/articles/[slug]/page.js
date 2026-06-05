@@ -84,7 +84,7 @@ export default async function SingleArticle({ params }) {
               </h3>
             </Link>
             <p style={{ margin: 0, color: "#111111", lineHeight: "1.6", fontSize: "1rem" }}>
-              {article.authorId.bio || `Author at The Nobleman.`}
+              {article.authorId.bio || `Staff at Nobelium.`}
             </p>
           </div>
         </div>

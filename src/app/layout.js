@@ -4,7 +4,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "The Nobleman | Science Publication",
+  title: "Nobelium | Science Publication",
   description: "The News Site of Noble and Greenough School - Science Edition",
 };
 

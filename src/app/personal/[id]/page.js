@@ -53,7 +53,7 @@ export default async function AuthorProfile({ params }) {
             {author.role}
           </span>
           <p style={{ margin: 0, color: "#111111", lineHeight: "1.6", fontSize: "1.1rem" }}>
-            {author.bio || "Author at The Nobleman."}
+            {author.bio || "Staff at Nobelium."}
           </p>
         </div>
       </div>
