@@ -4,8 +4,8 @@ const UserSchema = new mongoose.Schema(
   {
     firebaseUid: {
       type: String,
-      required: true,
       unique: true,
+      sparse: true,
     },
     name: {
       type: String,
@@ -20,14 +20,34 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    pronouns: {
+      type: String,
+      default: "",
+    },
+    graduationYear: {
+      type: String,
+      default: "",
+    },
     avatarUrl: {
       type: String,
       default: "",
     },
     role: {
       type: String,
-      enum: ["Admin", "Editor", "Author"],
-      default: "Author",
+      enum: ["Admin", "Subject Editor", "Staff"],
+      default: "Staff",
+    },
+    managedSubjects: {
+      type: [String],
+      enum: [
+        "Biology",
+        "Chemistry",
+        "Physics",
+        "Computer Science",
+        "Psychology",
+        "Environmental Science",
+      ],
+      default: [],
     },
   },
   { timestamps: true }

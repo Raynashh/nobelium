@@ -9,7 +9,7 @@ export async function GET(request, { params }) {
 
   const safePathArray = filePathArray.filter(segment => !segment.includes('..') && segment !== '');
   
-  const r2PublicUrl = process.env.R2_PUBLIC_URL || "https://nobelium.cdn.ddbrother.me";
+  const r2PublicUrl = process.env.R2_PUBLIC_URL;
   const redirectUrl = `${r2PublicUrl}/uploads/${safePathArray.join('/')}`;
 
   return NextResponse.redirect(redirectUrl, 301);

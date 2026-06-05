@@ -10,25 +10,27 @@ export async function POST(request) {
     
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     
-    const email = decodedToken.email || "no-email@nobelium.com";
+    const email = decodedToken.email;
     const adminEmails = process.env.ADMIN_EMAILS ? process.env.ADMIN_EMAILS.split(',') : [];
 
+    await connectMongo();
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return NextResponse.json({ error: "Account not authorized" }, { status: 403 });
+    }
+
     const updateData = {
-      name: decodedToken.name || "Nobelium Author", 
-      email, 
-      avatarUrl: decodedToken.picture || ""
+      firebaseUid: decodedToken.uid,
+      name: user.name && user.name !== "New User" ? user.name : decodedToken.name,
+      avatarUrl: user.avatarUrl || decodedToken.picture,
     };
 
-    if (adminEmails.includes(email)) {
+    if (adminEmails.includes(email) && user.role !== "Admin") {
       updateData.role = "Admin";
     }
 
-    await connectMongo();
-    await User.findOneAndUpdate(
-      { firebaseUid: decodedToken.uid },
-      updateData,
-      { upsert: true, new: true }
-    );
+    await User.updateOne({ _id: user._id }, { $set: updateData });
     
     const expiresIn = 60 * 60 * 24 * 5 * 1000;
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });

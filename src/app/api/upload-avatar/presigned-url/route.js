@@ -14,18 +14,18 @@ export async function POST(request) {
     const decodedClaims = await adminAuth.verifySessionCookie(session);
     await connectMongo();
     const user = await User.findOne({ firebaseUid: decodedClaims.uid });
-    if (!user || !["Admin", "Subject Editor", "Staff"].includes(user.role)) {
-      return NextResponse.json({ error: "Forbidden: Unauthorized role" }, { status: 403 });
+    
+    if (!user) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { fileName, fileType } = await request.json();
-    
     if (!fileName || !fileType) {
       return NextResponse.json({ error: "Missing file metadata" }, { status: 400 });
     }
 
     const safeFileName = `${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.]/g, "_")}`;
-    const s3Key = `uploads/editor/${safeFileName}`;
+    const s3Key = `uploads/avatars/${safeFileName}`;
 
     const command = new PutObjectCommand({
       Bucket: R2_BUCKET_NAME,
@@ -33,12 +33,12 @@ export async function POST(request) {
       ContentType: fileType,
     });
 
-    const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 });
+    const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 }); // 5 mins
     const publicUrl = `${R2_PUBLIC_URL}/${s3Key}`;
 
-    return NextResponse.json({ success: true, presignedUrl, url: publicUrl });
+    return NextResponse.json({ success: true, presignedUrl, publicUrl });
   } catch (error) {
-    console.error("Upload Image Presigned URL Error:", error);
+    console.error("Presigned URL Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

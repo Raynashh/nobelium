@@ -211,16 +211,27 @@ export default function ClientArticleEditor({ initialArticle, users, editions })
               <input type="file" accept="image/*" onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
-                const formData = new FormData();
-                formData.append("file", file);
                 try {
-                  const res = await fetch("/api/upload-image", { method: "POST", body: formData });
-                  const data = await res.json();
-                  if (data.success) {
-                    setHeaderImageUrl(data.url);
-                    toast.success("Header image uploaded.");
+                  const presignRes = await fetch("/api/upload-image", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ fileName: file.name, fileType: file.type || "application/octet-stream" })
+                  });
+                  const presignData = await presignRes.json();
+                  if (presignData.success) {
+                    const uploadRes = await fetch(presignData.presignedUrl, {
+                      method: "PUT",
+                      headers: { "Content-Type": file.type || "application/octet-stream" },
+                      body: file
+                    });
+                    if (uploadRes.ok) {
+                      setHeaderImageUrl(presignData.url);
+                      toast.success("Header image uploaded.");
+                    } else {
+                      toast.error("Upload to storage failed.");
+                    }
                   } else {
-                    toast.error("Upload failed: " + data.error);
+                    toast.error("Upload failed: " + presignData.error);
                   }
                 } catch {
                   toast.error("Upload error.");

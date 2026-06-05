@@ -1,6 +1,10 @@
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Silence the "multiple lockfiles" workspace root warning
   //outputFileTracingRoot: '/Users/ddbrother/Github/nobelium',
 
   experimental: {

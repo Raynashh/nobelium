@@ -12,7 +12,7 @@ export default async function SingleArticle({ params }) {
   
   const resolvedParams = await params;
   
-  const article = await Article.findOne({ slug: resolvedParams.slug, isDeleted: { $ne: true } })
+  const article = await Article.findOne({ slug: resolvedParams.slug, isDeleted: { $ne: true }, status: "Published" })
     .populate("authorId")
     .lean();
 

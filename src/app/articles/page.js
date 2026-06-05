@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ArticlesArchive() {
   await connectMongo();
-  const articles = await Article.find({ isDeleted: { $ne: true } })
+  const articles = await Article.find({ isDeleted: { $ne: true }, status: "Published" })
     .sort({ createdAt: -1 })
     .populate("authorId")
     .lean();

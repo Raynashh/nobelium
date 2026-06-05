@@ -203,16 +203,27 @@ const MenuBar = ({ editor, onSetHeaderImage, toast }) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
     try {
-      const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (data.success) {
-        editor.chain().focus().setImage({ src: data.url, width: '40%' }).run();
-        toast.success('Image inserted.');
+      const presignRes = await fetch('/api/upload-image', {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileName: file.name, fileType: file.type || "application/octet-stream" })
+      });
+      const presignData = await presignRes.json();
+      if (presignData.success) {
+        const uploadRes = await fetch(presignData.presignedUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type || "application/octet-stream" },
+          body: file
+        });
+        if (uploadRes.ok) {
+          editor.chain().focus().setImage({ src: presignData.url, width: '40%' }).run();
+          toast.success('Image inserted.');
+        } else {
+          toast.error('Upload to storage failed.');
+        }
       } else {
-        toast.error('Upload failed: ' + data.error);
+        toast.error('Upload failed: ' + presignData.error);
       }
     } catch {
       toast.error('Upload error — please try again.');
@@ -340,16 +351,27 @@ export default function RichTextEditor({ content, onChange, onSetHeaderImage, im
     const file = e.target.files?.[0];
     if (!file) return;
     setBankUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
     try {
-      const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (data.success) {
-        setImageBank(prev => [...prev, data.url]);
-        toast.success('Image added to bank.');
+      const presignRes = await fetch('/api/upload-image', {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileName: file.name, fileType: file.type || "application/octet-stream" })
+      });
+      const presignData = await presignRes.json();
+      if (presignData.success) {
+        const uploadRes = await fetch(presignData.presignedUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type || "application/octet-stream" },
+          body: file
+        });
+        if (uploadRes.ok) {
+          setImageBank(prev => [...prev, presignData.url]);
+          toast.success('Image added to bank.');
+        } else {
+          toast.error('Upload to storage failed.');
+        }
       } else {
-        toast.error('Upload failed: ' + data.error);
+        toast.error('Upload failed: ' + presignData.error);
       }
     } catch {
       toast.error('Upload error — please try again.');

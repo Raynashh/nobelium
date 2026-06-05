@@ -11,14 +11,27 @@ export async function PUT(request, { params }) {
     const decodedClaims = await adminAuth.verifySessionCookie(session);
     await connectMongo();
     const user = await User.findOne({ firebaseUid: decodedClaims.uid });
-    if (!user || (user.role !== "Admin" && user.role !== "Editor")) {
-      return NextResponse.json({ error: "Forbidden: Admins or Editors only" }, { status: 403 });
+    if (!["Admin", "Subject Editor", "Staff"].includes(user?.role)) {
+      return NextResponse.json({ error: "Forbidden: Unauthorized role" }, { status: 403 });
     }
 
     const resolvedParams = await params;
     const { slug } = resolvedParams;
 
+    const article = await Article.findOne({ slug });
+    if (!article) return NextResponse.json({ error: "Article not found" }, { status: 404 });
+
+    if (user.role === "Subject Editor" && (!user.managedSubjects || !user.managedSubjects.includes(article.subject))) {
+      return NextResponse.json({ error: "Forbidden: Not assigned to this article's subject" }, { status: 403 });
+    }
+    if (user.role === "Staff" && article.authorId.toString() !== user._id.toString()) {
+      return NextResponse.json({ error: "Forbidden: You can only edit your own articles" }, { status: 403 });
+    }
+
     const body = await request.json();
+    if (body.subject && user.role === "Subject Editor" && !user.managedSubjects.includes(body.subject)) {
+      return NextResponse.json({ error: "Forbidden: Cannot change to an unmanaged subject" }, { status: 403 });
+    }
     
     const updatedArticle = await Article.findOneAndUpdate(
       { slug },
@@ -44,12 +57,22 @@ export async function DELETE(request, { params }) {
     const decodedClaims = await adminAuth.verifySessionCookie(session);
     await connectMongo();
     const user = await User.findOne({ firebaseUid: decodedClaims.uid });
-    if (!user || (user.role !== "Admin" && user.role !== "Editor")) {
-      return NextResponse.json({ error: "Forbidden: Admins or Editors only" }, { status: 403 });
+    if (!["Admin", "Subject Editor", "Staff"].includes(user?.role)) {
+      return NextResponse.json({ error: "Forbidden: Unauthorized role" }, { status: 403 });
     }
 
     const resolvedParams = await params;
     const { slug } = resolvedParams;
+
+    const article = await Article.findOne({ slug });
+    if (!article) return NextResponse.json({ error: "Article not found" }, { status: 404 });
+
+    if (user.role === "Subject Editor" && (!user.managedSubjects || !user.managedSubjects.includes(article.subject))) {
+      return NextResponse.json({ error: "Forbidden: Not assigned to this article's subject" }, { status: 403 });
+    }
+    if (user.role === "Staff" && article.authorId.toString() !== user._id.toString()) {
+      return NextResponse.json({ error: "Forbidden: You can only delete your own articles" }, { status: 403 });
+    }
 
     const deletedArticle = await Article.findOneAndUpdate(
       { slug },

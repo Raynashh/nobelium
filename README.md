@@ -18,7 +18,7 @@ reach out to me! I can generate api keys for everything for you and help with se
 # To run this yourself independently:
 
 1. Keys
-- populate them yourself using MongoDB Atlas and Firebase for Google authentication and r2 cloudflare; see .example.env.local for an example .env.local
+- populate them yourself using MongoDB Atlas and Firebase for Google authentication and r2 cloudflare; see .example.env.dev for an example .env.dev
 
 2. Run the application
 - ``npm run build``

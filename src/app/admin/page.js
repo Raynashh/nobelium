@@ -36,6 +36,16 @@ export default function AdminDashboard() {
   const { toasts, toast } = useToast();
 
   useEffect(() => {
+    fetch("/api/staff/profile")
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          router.push("/staff/login");
+        } else if (data.user.role !== "Admin" && data.user.role !== "Subject Editor") {
+          router.push("/staff/dashboard");
+        }
+      });
+
     fetch("/api/editions")
       .then(res => res.json())
       .then(data => {
@@ -50,7 +60,7 @@ export default function AdminDashboard() {
       .then(data => {
         if (data.articles) setArticles(data.articles);
       });
-  }, []);
+  }, [router]);
 
   const selectedEditionName = useMemo(() => {
     return editions.find(edition => edition._id === selectedEdition)?.name || "Selected Edition";
@@ -161,7 +171,12 @@ export default function AdminDashboard() {
     <>
       <ToastContainer toasts={toasts} />
       <div className="admin-container" style={{ maxWidth: "1100px" }}>
-      <h1 style={{ marginBottom: "1.5rem" }}>Staff</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+        <h1 style={{ margin: 0 }}>Dashboard</h1>
+        <Link href="/admin/users" className="btn btn-primary">
+          Manage Users
+        </Link>
+      </div>
 
       <section style={{ border: "1px solid var(--border)", padding: "1.5rem", marginBottom: "2rem" }}>
         <div className="admin-top-grid">
