@@ -3,18 +3,21 @@ import connectMongo from "@/lib/mongodb";
 import Article from "@/models/Article";
 import User from "@/models/User";
 import Edition from "@/models/Edition";
+import HomeRecentStories from "@/components/HomeRecentStories";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   await connectMongo();
   
-  const articles = await Article.find({ isDeleted: { $ne: true }, status: "Published" })
+  const articlesRaw = await Article.find({ isDeleted: { $ne: true }, status: "Published" })
     .sort({ createdAt: -1 })
-    .limit(4)
+    .limit(10)
     .populate("authorId")
     .populate("editionId")
     .lean();
+
+  const articles = JSON.parse(JSON.stringify(articlesRaw));
 
   const featuredArticle = articles.length > 0 ? articles[0] : null;
   const recentStories = articles.length > 1 ? articles.slice(1) : [];
@@ -23,30 +26,7 @@ export default async function Home() {
     <div className="container home-container" style={{ paddingBottom: "4rem" }}>
       <div className="left-column">
         <h2 className="section-title">Recent Stories</h2>
-        <div className="recent-list">
-          {recentStories.length === 0 && <p style={{color: '#666'}}>No recent stories to display.</p>}
-          {recentStories.map((story) => (
-            <div className="recent-story" key={story.slug}>
-              <div className="recent-image">
-                <img src={story.headerImageUrl || "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&q=80&w=400"} alt={story.title} />
-              </div>
-              <div className="recent-content">
-                <h3 style={{ textTransform: "uppercase" }}><Link href={`/articles/${story.slug}`}>{story.title}</Link></h3>
-                <div className="meta">
-                  <span className="author">
-                    {story.authorId && story.authorId._id ? (
-                      <Link href={`/personal/${story.authorId._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                        {story.authorId.name}
-                      </Link>
-                    ) : (
-                      story.authorId?.name || "Staff Writer"
-                    )}
-                  </span> • {new Date(story.publishedAt || (story.editionId && story.editionId.releaseDate) || story.createdAt).toLocaleDateString()}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <HomeRecentStories initialStories={recentStories} />
       </div>
       <div className="right-column">
         {featuredArticle ? (
