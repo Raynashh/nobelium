@@ -7,13 +7,17 @@ import ImageResize from 'tiptap-extension-resize-image';
 import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
   Heading1, Heading2, Heading3, Heading4, Type,
   Image as ImageIcon, Link as LinkIcon, Unlink,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   ImageUp, List, ListOrdered, Quote, Minus, Loader2,
-  Upload, X, ExternalLink, Pencil, Check
+  Upload, X, ExternalLink, Pencil, Check, Table as TableIcon, Trash, Plus
 } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import { useToast, ToastContainer } from '@/components/useToast';
@@ -322,6 +326,17 @@ const MenuBar = ({ editor, onSetHeaderImage, toast, articleSlug, editionSlug }) 
         {isUploading ? <Loader2 size={15} className="spin" /> : <ImageIcon size={15} />}
       </label>
       <span className="menu-divider" />
+      {btn(() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(), editor.isActive('table'), 'Insert Table', <TableIcon size={15} />)}
+      {editor.isActive('table') && (
+        <>
+          {btn(() => editor.chain().focus().addColumnAfter().run(), false, 'Add Column', <Plus size={15} />)}
+          {btn(() => editor.chain().focus().addRowAfter().run(), false, 'Add Row', <Plus size={15} style={{ transform: 'rotate(90deg)' }} />)}
+          {btn(() => editor.chain().focus().deleteColumn().run(), false, 'Delete Column', <Minus size={15} style={{ transform: 'rotate(90deg)' }} />)}
+          {btn(() => editor.chain().focus().deleteRow().run(), false, 'Delete Row', <Minus size={15} />)}
+          {btn(() => editor.chain().focus().deleteTable().run(), false, 'Delete Table', <Trash size={15} />)}
+        </>
+      )}
+      <span className="menu-divider" />
       <button type="button"
         className={`menu-btn set-header-btn${isImageActive ? ' image-active' : ''}`}
         onClick={handleSetHeader} disabled={!isImageActive} title="Set Selected Image as Header">
@@ -348,6 +363,10 @@ export default function RichTextEditor({ content, onChange, onSetHeaderImage, im
       Underline,
       TextAlign.configure({ types: ['heading', 'paragraph', 'image', 'imageResize'] }),
       Link.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer' } }),
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     content,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -468,6 +487,12 @@ export default function RichTextEditor({ content, onChange, onSetHeaderImage, im
         .editor-content-area .ProseMirror hr { border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0; }
         .editor-content-area .ProseMirror img { max-width: 100%; height: auto; border: 1px solid var(--border); margin: 1rem auto; display: block; }
         .editor-content-area .ProseMirror img.ProseMirror-selectednode { outline: 3px solid var(--primary); }
+        .editor-content-area .ProseMirror table { border-collapse: collapse; table-layout: fixed; width: 100%; margin: 1.5rem 0; overflow: hidden; }
+        .editor-content-area .ProseMirror table td, .editor-content-area .ProseMirror table th { min-width: 1em; border: 1px solid var(--border); padding: 0.5rem 0.75rem; vertical-align: top; box-sizing: border-box; position: relative; }
+        .editor-content-area .ProseMirror table th { font-weight: bold; text-align: left; background-color: #f8f9fa; }
+        .editor-content-area .ProseMirror table .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: -2px; width: 4px; background-color: #adf; pointer-events: none; }
+        .editor-content-area .ProseMirror table p { margin: 0; }
+
 
         /* Link popover */
         .link-popover {
