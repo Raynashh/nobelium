@@ -31,14 +31,37 @@ export default async function Home() {
       <div className="right-column">
         {featuredArticle ? (
           <div className="featured-story">
-             <Link href={`/articles/${featuredArticle.slug}`}>
-              <div className="featured-image">
-                <img src={featuredArticle.headerImageUrl || "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80&w=1200"} alt={featuredArticle.title} />
-              </div>
-              <div className="featured-content">
-                <h2>{featuredArticle.title}</h2>
-              </div>
-            </Link>
+             <div className="featured-image" style={{ position: "relative" }}>
+               <span style={{
+                 position: "absolute", top: "1rem", left: "1rem", 
+                 background: "var(--primary)", color: "var(--primary-foreground)", 
+                 padding: "0.2rem 0.5rem", fontSize: "0.75rem", fontWeight: "bold", textTransform: "uppercase"
+               }}>
+                 {featuredArticle.subject || "Science"}
+               </span>
+               <Link href={`/articles/${featuredArticle.slug}`}>
+                 <img src={featuredArticle.headerImageUrl || "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80&w=1200"} alt={featuredArticle.title} style={{ display: "block" }} />
+               </Link>
+             </div>
+             <div className="featured-content" style={{ textAlign: "left", padding: "1rem 0" }}>
+               <Link href={`/articles/${featuredArticle.slug}`} style={{ textDecoration: "none" }}>
+                 <h2 style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>{featuredArticle.title}</h2>
+               </Link>
+               <p style={{ fontSize: "1.1rem", marginBottom: "1rem", color: "var(--foreground)" }}>
+                 {featuredArticle.content?.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&[#A-Za-z0-9]+;/g, '').substring(0, 200)}...
+               </p>
+               <div className="meta" style={{ fontSize: "0.9rem", borderTop: "1px solid var(--border)", paddingTop: "0.5rem" }}>
+                 <span className="author">
+                   {featuredArticle.authorId && featuredArticle.authorId._id ? (
+                     <Link href={`/personal/${featuredArticle.authorId._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                       {featuredArticle.authorId.name}
+                     </Link>
+                   ) : (
+                     featuredArticle.authorId?.name || "Staff Writer"
+                   )}
+                 </span> • {new Date(featuredArticle.publishedAt || (featuredArticle.editionId && featuredArticle.editionId.releaseDate) || featuredArticle.createdAt).toLocaleDateString()}
+               </div>
+             </div>
           </div>
         ) : (
           <div className="featured-story" style={{ padding: "2rem", textAlign: "center", background: "#f8f9fa", border: "1px dashed var(--border)" }}>

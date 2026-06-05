@@ -36,11 +36,21 @@ export default function HomeRecentStories({ initialStories }) {
         {stories.length === 0 && <p style={{color: '#666'}}>No recent stories to display.</p>}
         {stories.map((story) => (
           <div className="recent-story" key={story.slug}>
-            <div className="recent-image">
-              <img src={story.headerImageUrl || "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&q=80&w=400"} alt={story.title} />
+            <div className="recent-image" style={{ position: "relative" }}>
+              <span style={{
+                 position: "absolute", top: "0.5rem", left: "0.5rem", 
+                 background: "var(--primary)", color: "var(--primary-foreground)", 
+                 padding: "0.2rem 0.5rem", fontSize: "0.7rem", fontWeight: "bold", textTransform: "uppercase"
+               }}>
+                 {story.subject || "Science"}
+              </span>
+              <img src={story.headerImageUrl || "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&q=80&w=400"} alt={story.title} style={{ display: "block" }} />
             </div>
             <div className="recent-content">
-              <h3 style={{ textTransform: "uppercase" }}><Link href={`/articles/${story.slug}`}>{story.title}</Link></h3>
+              <h3 style={{ textTransform: "uppercase", marginBottom: "0.5rem" }}><Link href={`/articles/${story.slug}`}>{story.title}</Link></h3>
+              <p style={{ fontSize: "0.95rem", marginBottom: "0.5rem", color: "var(--foreground)" }}>
+                {story.content?.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&[#A-Za-z0-9]+;/g, '').substring(0, 120)}...
+              </p>
               <div className="meta">
                 <span className="author">
                   {story.authorId && story.authorId._id ? (
