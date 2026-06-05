@@ -27,9 +27,9 @@ export default function AdminDashboard() {
   const [newEditionName, setNewEditionName] = useState("");
   const [manualTitle, setManualTitle] = useState("");
   const [manualSubject, setManualSubject] = useState("Biology");
-  const [importTitle, setImportTitle] = useState("");
-  const [importSubject, setImportSubject] = useState("Biology");
-  const [htmlZipFile, setHtmlZipFile] = useState(null);
+  const [importTasks, setImportTasks] = useState([
+    { id: 1, title: "", subject: "Biology", file: null }
+  ]);
   const [isCreatingDraft, setIsCreatingDraft] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
@@ -131,39 +131,83 @@ export default function AdminDashboard() {
     }
   };
 
+  const addImportTask = () => {
+    setImportTasks([...importTasks, { id: Date.now(), title: "", subject: "Biology", file: null }]);
+  };
+
+  const removeImportTask = (id) => {
+    setImportTasks(importTasks.filter(task => task.id !== id));
+  };
+
+  const updateImportTask = (id, field, value) => {
+    setImportTasks(importTasks.map(task => task.id === id ? { ...task, [field]: value } : task));
+  };
+
   const handleHtmlZipUpload = async (e) => {
     e.preventDefault();
-    if (!htmlZipFile || !selectedEdition) {
-      toast.error("Select a ZIP file and an edition first.");
+    if (!selectedEdition) {
+      toast.error("Select an edition first.");
       return;
     }
-    if (!importTitle.trim()) {
-      toast.error("Please enter a title for the imported article.");
+
+    const validTasks = importTasks.filter(task => task.file && task.title.trim());
+    if (validTasks.length === 0) {
+      toast.error("Please provide a ZIP file and title for at least one import.");
       return;
     }
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append("file", htmlZipFile);
-    formData.append("editionId", selectedEdition);
-    formData.append("title", importTitle.trim());
-    formData.append("subject", importSubject);
+    let successCount = 0;
+    let failedCount = 0;
+    let lastSuccessSlug = null;
 
-    try {
-      const res = await fetch("/api/articles/import-html-zip", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success) {
-        router.push(`/admin/edit/${data.articleSlug}`);
-      } else {
-        toast.error("Error: " + data.error);
+    for (const task of validTasks) {
+      const formData = new FormData();
+      formData.append("file", task.file);
+      formData.append("editionId", selectedEdition);
+      formData.append("title", task.title.trim());
+      formData.append("subject", task.subject);
+
+      try {
+        const res = await fetch("/api/articles/import-html-zip", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        if (data.success) {
+          successCount++;
+          lastSuccessSlug = data.articleSlug;
+        } else {
+          failedCount++;
+          toast.error(`Error importing ${task.title}: ${data.error}`);
+        }
+      } catch {
+        failedCount++;
+        toast.error(`Upload failed for ${task.title}.`);
       }
-    } catch {
-      toast.error("Upload failed.");
-    } finally {
-      setIsUploading(false);
+    }
+
+    setIsUploading(false);
+
+    if (successCount > 0 && failedCount === 0) {
+      toast.success(`Successfully imported ${successCount} article(s).`);
+      setImportTasks([{ id: Date.now(), title: "", subject: "Biology", file: null }]);
+      if (successCount === 1 && lastSuccessSlug) {
+        router.push(`/admin/edit/${lastSuccessSlug}`);
+      } else {
+        fetch("/api/articles")
+          .then(res => res.json())
+          .then(data => {
+            if (data.articles) setArticles(data.articles);
+          });
+      }
+    } else if (successCount > 0) {
+      toast.info(`Imported ${successCount} article(s), but ${failedCount} failed.`);
+      fetch("/api/articles")
+        .then(res => res.json())
+        .then(data => {
+          if (data.articles) setArticles(data.articles);
+        });
     }
   };
 
@@ -263,24 +307,38 @@ export default function AdminDashboard() {
 
       <section style={{ border: "1px solid var(--border)", padding: "1.5rem" }}>
         <h2 style={{ marginBottom: "1rem" }}>Automated ZIP Import</h2>
-        <form onSubmit={handleHtmlZipUpload} className="admin-import-grid">
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label>Imported Title</label>
-            <input value={importTitle} onChange={e => setImportTitle(e.target.value)} placeholder="e.g. Why does slang change so fast" required />
+        <form onSubmit={handleHtmlZipUpload}>
+          {importTasks.map((task, index) => (
+            <div key={task.id} className="admin-import-grid" style={{ marginBottom: "1rem", paddingBottom: "1rem", borderBottom: index < importTasks.length - 1 ? "1px solid var(--border)" : "none" }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>Imported Title</label>
+                <input value={task.title} onChange={e => updateImportTask(task.id, 'title', e.target.value)} placeholder="e.g. Why does slang change so fast" required />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>Category</label>
+                <select value={task.subject} onChange={e => updateImportTask(task.id, 'subject', e.target.value)}>
+                  {SUBJECTS.map(subject => <option key={subject} value={subject}>{subject}</option>)}
+                </select>
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>ZIP File</label>
+                <input type="file" accept=".zip" onChange={e => updateImportTask(task.id, 'file', e.target.files?.[0] || null)} required />
+              </div>
+              {importTasks.length > 1 && (
+                <button type="button" className="btn" onClick={() => removeImportTask(task.id)} style={{ alignSelf: "end", border: "1px solid var(--border)", padding: "0.5rem" }}>
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+          <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+            <button type="button" className="btn" onClick={addImportTask} style={{ border: "1px solid var(--border)" }}>
+              + Add Another File
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={isUploading || !selectedEdition}>
+              {isUploading ? "Importing..." : "Upload All ZIPs"}
+            </button>
           </div>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label>Category</label>
-            <select value={importSubject} onChange={e => setImportSubject(e.target.value)}>
-              {SUBJECTS.map(subject => <option key={subject} value={subject}>{subject}</option>)}
-            </select>
-          </div>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label>ZIP File</label>
-            <input type="file" accept=".zip" onChange={e => setHtmlZipFile(e.target.files?.[0] || null)} />
-          </div>
-          <button type="submit" className="btn btn-primary" disabled={isUploading || !htmlZipFile || !selectedEdition}>
-            {isUploading ? "Importing..." : "Upload ZIP"}
-          </button>
         </form>
       </section>
     </div>
